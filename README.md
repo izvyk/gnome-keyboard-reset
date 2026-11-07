@@ -6,14 +6,13 @@ see [notice for legacy shells](#legacy-gnome-shell)
 ## Objective
 
 When there is more than one keyboard layout registered in Gnome, the
-gnome-screensaver will use the last used keyboard layout. Screensaver
-activation usually means that user is away from keyboard, and it is
-unreasonable to assume that he will remember to switch back to default.
-This results in attempt to enter password incorrectly, due to non-default
-keyboard layout.
+lock screen will use the last used keyboard layout. Locking usually means
+that user is away from keyboard, and it is unreasonable to assume that he
+will remember to switch back to default. This results in attempt to enter
+password incorrectly, due to non-default keyboard layout.
 
-This extension will reset keyboard layout on screensaver activation to
-the first keyboard layout. Also, this extension allows resetting keyboard
+This extension will reset keyboard layout to the first keyboard layout at
+the moment the session locks. Also, this extension allows resetting keyboard
 using command line.
 
 ## Installation

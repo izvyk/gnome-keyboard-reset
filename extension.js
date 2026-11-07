@@ -2,6 +2,7 @@
 
 import Gio from 'gi://Gio';
 import { Extension } from 'resource:///org/gnome/shell/extensions/extension.js';
+import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import { getInputSourceManager } from 'resource:///org/gnome/shell/ui/status/keyboard.js';
 
 const Iface = `<node>
@@ -18,7 +19,7 @@ export default class GnomeKeyboardResetExtension extends Extension {
         super(metadata);
         
         this._dbusImpl = null;
-        this._ss = null;
+        this._lockedId = null;
         info(`Loaded`);
     }
 
@@ -26,9 +27,14 @@ export default class GnomeKeyboardResetExtension extends Extension {
         this._dbusImpl = Gio.DBusExportedObject.wrapJSObject(Iface, this);
         this._dbusImpl.export(Gio.DBus.session, "/dev/galets/gkr");
 
-        this._ss = Gio.DBus.session.signal_subscribe(null, "org.gnome.ScreenSaver", "ActiveChanged", "/org/gnome/ScreenSaver", null, Gio.DBusSignalFlags.NONE, (connection, sender, path, iface, signal, params) => {
-            info("Screen lock status changed", params);
-            this.reset();
+        // Fires as the shield starts falling. ActiveChanged would be too late: it
+        // comes after the fade to black, and also fires on unlock and on idle
+        // fades that never lock.
+        this._lockedId = Main.screenShield?.connect("locked-changed", () => {
+            if (Main.screenShield.locked) {
+                info("Session locked");
+                this.reset();
+            }
         });
 
         info(`Enabled`);
@@ -36,9 +42,9 @@ export default class GnomeKeyboardResetExtension extends Extension {
 
     // This extension is using "session-modes": ["unlock-dialog"] because it is designed to switch keyboard mode in unlock dialog
     disable() {
-        if (this._ss) {
-            Gio.DBus.session.signal_unsubscribe(this._ss);
-            this._ss = null;
+        if (this._lockedId) {
+            Main.screenShield.disconnect(this._lockedId);
+            this._lockedId = null;
         }
 
         if (this._dbusImpl) {
